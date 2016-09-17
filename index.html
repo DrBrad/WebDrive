@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>DrBradTech</title>
+        <link rel='shortcut icon' href='icon.png'>
+    </head>
+    
+    <style>
+        html {
+            color: #5f5f5f;
+            background-color: #f6f6f6;
+            font-family: sans-serif;
+            overflow-x: hidden;
+            -webkit-user-select: none;        
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -o-user-select: none;
+            user-select: none;
+        }
+        
+        #title {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            padding: 10px;
+            background-color: #444444;
+            border-bottom: solid #333333 thin;
+        }
+        
+        button.title {
+            color: #f6f6f6;
+            background-color: #333333;
+            border: solid #222222 1px;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        button.title:hover, button.title:active {
+            color: #d6d6d6;
+        }
+        
+        #container {
+            margin-top: 35px;
+        }
+        
+        #backcontainer {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            min-height: 100%;
+            z-index: -1;
+        }
+        
+        div.item {
+            float: left;
+            width: 80px;
+            margin-top: 20px;
+            margin-left: 20px;
+            overflow: hidden;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        div.item:active {
+            opacity: 0.5;
+        }
+        
+        #moptions {
+            display: none;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 250px;
+            background-color: #eeeeee;
+            border: solid #e6e6e6 thin;
+            box-shadow: 0px 0px 4px 2px #d6d6d6;
+        }
+        
+        #options {
+            display: none;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 250px;
+            background-color: #eeeeee;
+            border: solid #e6e6e6 thin;
+            box-shadow: 0px 0px 4px 2px #d6d6d6;
+        }
+        
+        div.optionsItem {
+            padding: 5px 5px 5px 20px;
+            cursor: default;
+        }
+        
+        div.optionsItem:hover, div.optionsItem:active {
+            background-color: #e6e6e6;
+        }
+        
+        #fileloc {
+            display: none;
+        }
+
+        #uploadfile {
+            display: none;
+        }
+        
+        #namer {
+            display: none;
+            position: fixed;
+            top: 40%;
+            left: calc(50% - 160px);
+            width: 300px;
+            padding: 10px;
+            background-color: #eeeeee;
+            border: solid #e6e6e6 thin;
+            box-shadow: 0px 0px 4px 2px #d6d6d6;
+        }
+        
+        button.namebuttons {
+            color: #ffffff;
+            background-color: #e6b800;
+            padding: 6px 6px 4px 6px;
+            border: none;
+            border-bottom: solid #e6b800; 2px;
+            border-radius: 6px;
+            outline: none;
+        }
+        
+        button.namebuttons:hover, button.namebuttons:active {
+           background-color: #f6c800;
+        }
+    </style>
+    
+    <div id='title' oncontextmenu='return false;'></div>
+    <div id='backcontainer' oncontextmenu='return false;' onmousedown='startdrag(event);' onmousemove='dragger(event);' onmouseup='stopdrag();'></div>
+    <div id='container' onmousemove='dragger(event);'></div>
+    
+    <div id='namer'></div>
+    
+    <div id='drag' style='position: absolute; background-color: #f6c800; border: solid #e6b800 2px; opacity: 0.4; display: none' onmousemove='dragger(event);' onmouseup='stopdrag();'></div>
+    
+    <div id='moptions' oncontextmenu='return false;'>
+        <div class='optionsItem' onclick='newfolder();'>Create New <u>F</u>older</div>
+        <div class='optionsItem' onclick='newdocument();'>Create New <u>D</u>ocument</div>
+        <div class='optionsItem'>
+            <form action='uploadfile.php' method='post' enctype='multipart/form-data' target='hiddenframe' onchange='document.getElementById("moptions").style.display = "none"; this.submit(); setTimeout(openfolder, 500);'>
+                <input id='fileloc' type='text' name='loc' value='files/'>
+                <input id='uploadfile' type='file' name='files[]' multiple>
+                <label for='uploadfile'>Upload <u>F</u>ile[s]</label>
+            </form>
+        </div>
+        <iframe name='hiddenframe' style='display: none'></iframe>
+    </div>
+    
+    <div id='options' oncontextmenu='return false;'>
+        <div class='optionsItem' onclick='window.open(loc+fileoptionname, "_blank");'>Open In New <u>T</u>ab</div>
+        <div class='optionsItem' onclick='renamefile();'><u>R</u>ename</div>
+        <div class='optionsItem' onclick='removefile();'><u>D</u>elete</div>
+        <div class='optionsItem' onclick='downloadfile();'><u>D</u>ownload</div>
+    </div>
+    
+    <script>
+        var fileoptionname = '';
+        var loc = 'files/';
+        var dragging = false;
+        var selection = new Array();
+
+        openfolder();
+        function openfolder(){
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', 'read.php?loc='+loc, true);
+            xhr.onload = function(){
+                document.getElementById('container').innerHTML = this.responseText;
+                document.getElementById('fileloc').value = loc;
+
+                var locarray = loc.replace('files/', 'My Drive/').split('/');
+                var builder = '<button class=\'title\' onclick="loc = \'files/\'; openfolder();">';
+                for(i = 0; i < locarray.length-1; i++){
+
+                    var locbuilder = 'files/';
+                    for(j = 1; j < i+1; j++){
+                        locbuilder += locarray[j]+'/';
+                    }
+
+                    builder += locarray[i]+'</button>&nbsp;<button class=\'title\' onclick="loc = \''+locbuilder+locarray[i+1]+'/\'; openfolder();">';
+                }
+                document.getElementById('title').innerHTML = builder.slice(0, -15);
+            };
+            xhr.send();
+        }
+        
+        var x = 0, y = 0;
+        document.onmousemove = function(event){
+            event = event || window.event;
+            x = event.clientX+document.body.scrollLeft;
+            y = event.clientY+document.body.scrollTop;
+        };
+        
+        function openmOptions(){
+            document.getElementById('options').style.display = 'none';
+            document.getElementById('moptions').style.display = 'block';
+            document.getElementById('moptions').style.top = y+'px';
+            document.getElementById('moptions').style.left = x+'px';
+        }
+        
+        function openOptions(){
+            if(selection.indexOf(fileoptionname) > -1){
+                document.getElementById('options').getElementsByClassName('optionsItem')[0].style.display = 'none';
+                document.getElementById('options').getElementsByClassName('optionsItem')[1].style.display = 'none';
+            }else{
+                document.getElementById('options').getElementsByClassName('optionsItem')[0].style.display = 'block';
+                document.getElementById('options').getElementsByClassName('optionsItem')[1].style.display = 'block';
+            }
+            document.getElementById('moptions').style.display = 'none';
+            document.getElementById('options').style.display = 'block';
+            document.getElementById('options').style.top = y+'px';
+            document.getElementById('options').style.left = x+'px';
+        }
+        
+        function newfolder(){
+            document.getElementById('options').style.display = 'none';
+            document.getElementById('moptions').style.display = 'none';
+            document.getElementById('namer').style.display = 'block';
+            document.getElementById('namer').innerHTML = "New Folder<br><br>" +
+                "<input id='foldername' style='width: 99%' placeholder='Name goes here...'><br><br>" +
+                "<button class='namebuttons' style='float: left' onclick='document.getElementById(\"namer\").style.display = \"none\"'>Cancel</button>" +
+                "<button class='namebuttons' style='float: right' onclick='foldernow()'>Create</button>";
+        }
+        
+        function foldernow(){
+            document.getElementById('namer').style.display = 'none';
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', 'newfolder.php?name='+loc+document.getElementById('foldername').value, true);
+            xhr.onload = function(){
+                openfolder();
+                document.getElementById('foldername').value = '';
+            }
+            xhr.send();
+        }
+        
+        function newdocument(){
+            document.getElementById('options').style.display = 'none';
+            document.getElementById('moptions').style.display = 'none';
+            document.getElementById('namer').style.display = 'block';
+            document.getElementById('namer').innerHTML = "New Document<br><br>" +
+                "<input id='docname' style='width: 99%' placeholder='Name goes here...'><br><br>" +
+                "<button class='namebuttons' style='float: left' onclick='document.getElementById(\"namer\").style.display = \"none\"'>Cancel</button>" +
+                "<button class='namebuttons' style='float: right' onclick='documentnow()'>Create</button>";
+        }
+        
+        function documentnow(){
+            document.getElementById('namer').style.display = 'none';
+            var xhr = new XMLHttpRequest();
+            if(!document.getElementById('docname').value.endsWith('.txt')){
+                document.getElementById('docname').value += '.txt';
+            }
+            xhr.open('get', 'newdocument.php?name='+loc+document.getElementById('docname').value, true);
+            xhr.onload = function(){
+                openfolder();
+                document.getElementById('docname').value = '';
+            }
+            xhr.send();
+        }
+        
+        function renamefile(){
+            document.getElementById('options').style.display = 'none';
+            document.getElementById('moptions').style.display = 'none';
+            document.getElementById('namer').style.display = 'block';
+            document.getElementById('namer').innerHTML = "Rename<br><br>" +
+                "<input id='renamename' style='width: 99%' placeholder='Name goes here...' value='"+fileoptionname+"'><br><br>" +
+                "<button class='namebuttons' style='float: left' onclick='document.getElementById(\"namer\").style.display = \"none\"'>Cancel</button>" +
+                "<button class='namebuttons' style='float: right' onclick='renamenow()'>Rename</button>";
+        }
+        
+        function renamenow(){
+            document.getElementById('namer').style.display = 'none';
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', 'rename.php?old='+loc+fileoptionname+'&new='+loc+document.getElementById('renamename').value, true);
+            xhr.onload = function(){
+                openfolder();
+            }
+            xhr.send();
+        }
+        
+        function removefile(){
+            document.getElementById('options').style.display = 'none';
+            
+            var files = '';
+            if(selection.indexOf(fileoptionname) > -1){
+                for(var i = 0; i < selection.length; i++){
+                    files += 'file'+i+'='+loc+selection[i]+'&';
+                }
+                
+                files = files.slice(0, -1);
+            }else{
+                files = 'file='+loc+fileoptionname;
+            }
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', 'remove.php?'+files, true);
+            xhr.onload = function(){
+                openfolder();
+            }
+            xhr.send();
+        }
+        
+        function downloadfile(){
+            document.getElementById('options').style.display = 'none';
+            
+            var files = '';
+            if(selection.indexOf(fileoptionname) > -1){
+                for(var i = 0; i < selection.length; i++){
+                    files += 'file'+i+'='+loc+selection[i]+'&';
+                }
+                
+                files = files.slice(0, -1);
+                window.open('downloads.php?'+files, 'hiddenframe');
+            }else{
+                window.open('downloads.php?file='+loc+fileoptionname, 'hiddenframe');
+            }
+        }
+        
+        var ox = 0, oy = 0;
+        function startdrag(event){
+            if(event.button == 0){
+                dragging = true;
+                var drag = document.getElementById('drag');
+                drag.style.display = 'block';
+
+                ox = event.clientX+document.body.scrollLeft;
+                oy = event.clientY+document.body.scrollTop;
+                drag.style.top = oy+'px';
+                drag.style.left = ox+'px';
+
+                document.getElementById('moptions').style.display = 'none';
+                document.getElementById('options').style.display = 'none';
+
+                for(var i = 0; i < document.getElementsByClassName('item').length; i++){
+                    var item = document.getElementsByClassName('item')[i];
+                    item.style.opacity = '';
+                }
+                selection = new Array();
+            }else{
+                openmOptions();
+            }
+        }
+        
+        function stopdrag(){
+            dragging = false;
+            var drag = document.getElementById('drag');
+            drag.style.display = 'none';
+            drag.style.width = '0px';
+            drag.style.height = '0px';
+        }
+        
+        function dragger(event){
+            if(dragging == true){
+                var drag = document.getElementById('drag');
+                
+                if(event.clientX+document.body.scrollLeft > ox){
+                    drag.style.width = (event.clientX+document.body.scrollLeft-ox)+'px';
+                }else{
+                    drag.style.left = event.clientX+document.body.scrollLeft+'px';
+                    drag.style.width = (ox-event.clientX+document.body.scrollLeft)+'px';
+                }
+                
+                if(event.clientY+document.body.scrollTop > oy){
+                    drag.style.height = (event.clientY+document.body.scrollTop-oy)+'px';
+                }else{
+                    drag.style.top = event.clientY+document.body.scrollTop+'px';
+                    drag.style.height = (oy-event.clientY+document.body.scrollTop)+'px';
+                }
+                
+                selection = new Array();
+                for(var i = 0; i < document.getElementsByClassName('item').length; i++){
+                    var item = document.getElementsByClassName('item')[i];
+                    
+                    var eleLeft = false, eleTop = false;
+                    
+                    if(event.clientX+document.body.scrollLeft > ox){
+                        if((item.getBoundingClientRect().left+80) > ox && item.getBoundingClientRect().left < event.clientX+document.body.scrollLeft){
+                            eleLeft = true;
+                        }
+                    }else{
+                        if((item.getBoundingClientRect().left+80) > event.clientX+document.body.scrollLeft && item.getBoundingClientRect().left < ox){
+                            eleLeft = true;
+                        }
+                    }
+                    
+                    if(event.clientY+document.body.scrollTop > oy){
+                        if((item.getBoundingClientRect().top+80) > oy && item.getBoundingClientRect().top < event.clientY+document.body.scrollTop){
+                            eleTop = true;
+                        }
+                    }else{
+                        if((item.getBoundingClientRect().top+80) > event.clientY+document.body.scrollTop && item.getBoundingClientRect().top < oy){
+                            eleTop = true;
+                        }
+                    }
+                    
+                    if(eleLeft == true && eleTop == true){
+                        item.style.opacity = '0.5';
+                        selection.push(item.getAttribute('name'));
+                    }else{
+                        item.style.opacity = '';
+                    }
+                }
+            }
+        }
+    </script>
+</html>
