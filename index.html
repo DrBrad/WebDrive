@@ -166,7 +166,10 @@
         var fileoptionname = '';
         var loc = 'files/';
         var dragging = false;
+<<<<<<< HEAD
         var selection = new Array();
+=======
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
 
         openfolder();
         function openfolder(){
@@ -207,6 +210,7 @@
         }
         
         function openOptions(){
+<<<<<<< HEAD
             if(selection.indexOf(fileoptionname) > -1){
                 document.getElementById('options').getElementsByClassName('optionsItem')[0].style.display = 'none';
                 document.getElementById('options').getElementsByClassName('optionsItem')[1].style.display = 'none';
@@ -214,6 +218,8 @@
                 document.getElementById('options').getElementsByClassName('optionsItem')[0].style.display = 'block';
                 document.getElementById('options').getElementsByClassName('optionsItem')[1].style.display = 'block';
             }
+=======
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
             document.getElementById('moptions').style.display = 'none';
             document.getElementById('options').style.display = 'block';
             document.getElementById('options').style.top = y+'px';
@@ -287,6 +293,7 @@
         
         function removefile(){
             document.getElementById('options').style.display = 'none';
+<<<<<<< HEAD
             
             var files = '';
             if(selection.indexOf(fileoptionname) > -1){
@@ -301,6 +308,10 @@
             
             var xhr = new XMLHttpRequest();
             xhr.open('get', 'remove.php?'+files, true);
+=======
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', 'remove.php?file='+loc+fileoptionname, true);
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
             xhr.onload = function(){
                 openfolder();
             }
@@ -309,6 +320,7 @@
         
         function downloadfile(){
             document.getElementById('options').style.display = 'none';
+<<<<<<< HEAD
             
             var files = '';
             if(selection.indexOf(fileoptionname) > -1){
@@ -321,6 +333,23 @@
             }else{
                 window.open('downloads.php?file='+loc+fileoptionname, 'hiddenframe');
             }
+=======
+            var req = new XMLHttpRequest();
+            req.open('get', loc+fileoptionname, true);
+            req.responseType = 'blob';
+
+            req.onload = function(event){
+            var blob = req.response;
+                var url = (window.URL || window.webkitURL).createObjectURL(blob);
+                var link = window.document.createElement('a');
+                link.href = url;
+                link.download = fileoptionname;
+                var click = document.createEvent('Event');
+                click.initEvent('click', true, true);
+                link.dispatchEvent(click);
+            };
+            req.send();
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
         }
         
         var ox = 0, oy = 0;
@@ -342,7 +371,10 @@
                     var item = document.getElementsByClassName('item')[i];
                     item.style.opacity = '';
                 }
+<<<<<<< HEAD
                 selection = new Array();
+=======
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
             }else{
                 openmOptions();
             }
@@ -374,7 +406,10 @@
                     drag.style.height = (oy-event.clientY+document.body.scrollTop)+'px';
                 }
                 
+<<<<<<< HEAD
                 selection = new Array();
+=======
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
                 for(var i = 0; i < document.getElementsByClassName('item').length; i++){
                     var item = document.getElementsByClassName('item')[i];
                     
@@ -402,7 +437,10 @@
                     
                     if(eleLeft == true && eleTop == true){
                         item.style.opacity = '0.5';
+<<<<<<< HEAD
                         selection.push(item.getAttribute('name'));
+=======
+>>>>>>> b1e89509b87aca26b16153b9ef51d71ab0c6f387
                     }else{
                         item.style.opacity = '';
                     }
